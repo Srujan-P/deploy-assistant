@@ -1,0 +1,426 @@
+/* OTP Login Styles - Terminal Theme */
+.login-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: #0a0a0a;
+    padding: 20px;
+}
+
+.login-actions {
+    margin-top: 20px;
+}
+
+.terminal-btn-primary {
+    background-color: #007bff;
+    color: #ffffff;
+    border: 1px solid #007bff;
+    padding: 8px 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin: 5px;
+    transition: all 0.3s;
+}
+
+.terminal-btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+.terminal-btn-success {
+    background-color: #28a745;
+    color: #ffffff;
+    border: 1px solid #28a745;
+    padding: 8px 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin: 5px;
+    transition: all 0.3s;
+}
+
+.terminal-btn-success:hover {
+    background-color: #218838;
+    border-color: #218838;
+}
+
+.terminal-btn-danger {
+    background-color: #dc3545;
+    color: #ffffff;
+    border: 1px solid #dc3545;
+    padding: 8px 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin: 5px;
+    transition: all 0.3s;
+}
+
+.terminal-btn-danger:hover {
+    background-color: #c82333;
+    border-color: #c82333;
+}
+
+.terminal-input {
+    background-color: #0a0a0a;
+    color: #00ff00;
+    border: 1px solid #333;
+    padding: 8px 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    border-radius: 3px;
+    outline: none;
+    margin-left: 10px;
+    width: 150px;
+}
+
+.terminal-input:focus {
+    border-color: #00ff00;
+    box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+}
+
+.terminal-input::placeholder {
+    color: #666;
+}
+
+.terminal-message {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    border: 1px solid;
+}
+
+.terminal-message.success {
+    background-color: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+    border-color: #28a745;
+}
+
+.terminal-message.error {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    border-color: #dc3545;
+}
+
+.terminal-message.info {
+    background-color: rgba(0, 123, 255, 0.1);
+    color: #007bff;
+    border-color: #007bff;
+}
+
+.otp-form {
+    display: none;
+    margin-top: 20px;
+}
+
+/* Legacy button styles for compatibility */
+.login-btn {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 10px;
+}
+
+.login-btn:hover {
+    background-color: #0056b3;
+}
+
+.login-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.verify-btn {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 10px;
+}
+
+.verify-btn:hover {
+    background-color: #218838;
+}
+
+.message {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* Logged-in State Styles */
+.logged-in-container {
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    background-color: #1a1a1a;
+    overflow: hidden;
+}
+
+.main-layout {
+    display: flex;
+    height: 100vh;
+}
+
+/* Left Sidebar */
+.sidebar {
+    width: 25vw;
+    background-color: #2d2d2d;
+    border-right: 2px solid #404040;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar h3 {
+    color: #00ff00;
+    margin-bottom: 30px;
+    font-size: 1.5em;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    border-bottom: 1px solid #404040;
+    padding-bottom: 10px;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    flex: 1;
+}
+
+.action-btn {
+    background-color: #333;
+    color: #00ff00;
+    padding: 15px 20px;
+    border: 2px solid #404040;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    transition: all 0.3s ease;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+}
+
+.action-btn:hover {
+    background-color: #404040;
+    border-color: #00ff00;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    transform: translateX(5px);
+}
+
+.action-btn:active {
+    transform: translateX(2px);
+    box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+}
+
+.action-btn:disabled {
+    background-color: #1a1a1a;
+    color: #666;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Terminal Window */
+.terminal-window {
+    width: 75vw;
+    background-color: #1a1a1a;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #404040;
+}
+
+.terminal-header {
+    background-color: #2d2d2d;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    border-bottom: 1px solid #404040;
+}
+
+.terminal-buttons {
+    display: flex;
+    gap: 8px;
+    margin-right: 15px;
+}
+
+.terminal-btn {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    cursor: default;
+    pointer-events: none;
+}
+
+.terminal-btn.close {
+    background-color: #ff5f57;
+}
+
+.terminal-btn.minimize {
+    background-color: #ffbd2e;
+}
+
+.terminal-btn.maximize {
+    background-color: #28ca42;
+}
+
+.terminal-title {
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    flex: 1;
+    text-align: center;
+}
+
+.terminal-body {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background-color: #0a0a0a;
+    height: 100vh;
+}
+
+.terminal-content {
+    font-family: 'Courier New', monospace;
+    color: #00ff00;
+    line-height: 1.4;
+}
+
+.terminal-line {
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    min-height: 20px;
+}
+
+.terminal-prompt {
+    color: #00ff00;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.terminal-cursor {
+    color: #00ff00;
+    animation: blink 1s infinite;
+    font-weight: bold;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+.terminal-output {
+    margin-top: 20px;
+    color: #fff;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 13px;
+    height: 100%;
+    overflow-y: auto;
+    max-height: calc(100vh - 120px); /* Subtract header and padding */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Keep content at bottom */
+}
+
+.terminal-output .json-key {
+    color: #ff6b6b;
+}
+
+.terminal-output .json-string {
+    color: #4ecdc4;
+}
+
+.terminal-output .json-number {
+    color: #ffe66d;
+}
+
+.terminal-output .json-boolean {
+    color: #a8e6cf;
+}
+
+
+/* Responsive Design */
+@media screen and (max-width: 650px) {
+    .main-layout {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100vw;
+        height: 15vh;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    
+    .action-buttons {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+    }
+    
+    .action-btn {
+        flex: 1;
+        min-width: 80px;
+        text-align: center;
+        font-size: 12px;
+        padding: 8px 4px;
+    }
+    
+    .terminal-window {
+        width: 100vw;
+        height: 85vh;
+    }
+    
+    .terminal-body {
+        padding: 15px;
+        height: 100%;
+    }
+    
+    .terminal-output {
+        max-height: calc(85vh - 120px);
+    }
+}
+

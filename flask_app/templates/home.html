@@ -1,0 +1,91 @@
+{% extends 'shared/layout.html' %}
+
+{% block extracss %}
+<link rel="stylesheet" href="{{ url_for('static', filename='main/css/home.css') }}">
+{% endblock %}
+
+{% block maincontent %}
+<!-- Login State -->
+<div id="loginState" class="login-container">
+    <div class="terminal-window">
+        <div class="terminal-header">
+            <div class="terminal-buttons">
+                <span class="terminal-btn close"></span>
+                <span class="terminal-btn minimize"></span>
+                <span class="terminal-btn maximize"></span>
+            </div>
+            <div class="terminal-title">DeployAssistant Authentication</div>
+        </div>
+        <div class="terminal-body">
+            <div class="terminal-content">
+                <div class="terminal-line">
+                    <span class="terminal-prompt">DeployAssistant@3rdspace:~$</span>
+                    <span class="terminal-cursor">_</span>
+                </div>
+                <div class="terminal-line">
+                    <span style="color: #00ffff;">Please authenticate to access deployment commands</span>
+                </div>
+                
+                <div class="login-actions">
+                    <button id="loginBtn" class="terminal-btn-primary">Send OTP</button>
+                    
+                    <div id="otpForm" class="otp-form">
+                        <div class="terminal-line">
+                            <span style="color: #00ff00;">OTP Code Required:</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-prompt">DeployAssistant@3rdspace:~$</span>
+                            <input type="text" id="otpInput" class="terminal-input" placeholder="Enter OTP" maxlength="6">
+                        </div>
+                        <div class="terminal-line">
+                            <button id="verifyBtn" class="terminal-btn-success">Verify</button>
+                            <button id="cancelBtn" class="terminal-btn-danger">Cancel</button>
+                        </div>
+                    </div>
+                    
+                    <div id="message" class="terminal-message" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Logged-in State -->
+<div id="loggedInState" class="logged-in-container" style="display: none;">
+    <div class="main-layout">
+        <!-- Left Sidebar - Action Buttons -->
+        <div class="sidebar">
+            <h3>Deploy Actions</h3>
+            <div class="action-buttons">
+                <button id="actionBtn1" class="action-btn">GCloud init & Git Fetch/Pull</button>
+                <button id="actionBtn2" class="action-btn">Docker Build</button>
+                <button id="actionBtn3" class="action-btn">Docker Push</button>
+                <button id="actionBtn4" class="action-btn">GCloud Run Deploy</button>
+            </div>
+        </div>
+        
+        <!-- Right Side - Terminal Window -->
+        <div class="terminal-window">
+            <div class="terminal-header">
+                <div class="terminal-buttons">
+                    <span class="terminal-btn close"></span>
+                    <span class="terminal-btn minimize"></span>
+                    <span class="terminal-btn maximize"></span>
+                </div>
+                <div class="terminal-title">DeployAssistant Terminal</div>
+            </div>
+            <div class="terminal-body">
+                <div class="terminal-content">
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">DeployAssistant@3rdspace:~$</span>
+                    </div>
+                    <div class="terminal-output" id="terminalOutput">
+                        <!-- JSON responses will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

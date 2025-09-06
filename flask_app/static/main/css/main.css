@@ -1,0 +1,19 @@
+* {
+    margin: 0;
+    padding: 0
+}
+
+/* styles text for the website */
+body {
+    font-family: Arial, serif;
+    text-align: justify;
+    text-justify: inter-word;
+}
+
+/* Styles the grid(div) that holds the picture and description */
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 50vh;
+    grid-gap: 20px;
+}

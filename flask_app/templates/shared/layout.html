@@ -1,0 +1,35 @@
+<!-- FILL ME IN WITH CODE FOR YOUR PAGE LAYOUT -->
+<!DOCTYPE html>
+<html lang="eng">
+<head>
+    <meta charset="utf-8">
+    <meta name="author" content="Srujan Patil" />
+    <meta name="description" content="Social App Deploy Assistant" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Social App Deploy Assistant</title>
+    <link rel="stylesheet"    href="{{ url_for('static', filename='main/css/main.css') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='main/images/favicon.ico') }}">
+    {% block extracss %}{% endblock %}
+</head>
+
+<body>
+    <article>
+    <!-- The main content  -->
+    <main>
+      {% block maincontent %}{% endblock %}
+    </main>
+    </article>
+    
+    <script src="{{ url_for('static', filename='main/js/main.js') }}" defer></script>
+    {% block extrajs %}{% endblock %}
+</body>
+
+</html>
+
+
+
+
+
+
+
+
