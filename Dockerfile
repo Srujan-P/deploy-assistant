@@ -6,17 +6,16 @@ FROM ubuntu:20.04
 LABEL maintainer "Srujan Patil <patilsru@msu.edu>"
 LABEL description="This is custom Docker Image for Srujan's Web Application"
 
-# Update Ubuntu Software repository
-RUN apt update
-RUN apt-get update -qq
+# Update Ubuntu Software repository and fix package issues
+RUN apt-get update && apt-get upgrade -y
+RUN apt-get install -y --fix-missing python3-pip vim
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set timezone
 ENV TZ=America/New_York
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Add the Flask application and install requirements
-RUN apt -y install python3-pip
-RUN apt -y install vim
 RUN mkdir /app
 COPY . /app
 WORKDIR /app

@@ -1,7 +1,5 @@
 // OTP Login Functionality
-let currentOTP = null;
-let currentTTL = null;
-let timerInterval = null;
+let currentResumeWorkflowUrl = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     const loginBtn = document.getElementById('loginBtn');
@@ -27,11 +25,10 @@ document.addEventListener('DOMContentLoaded', function() {
         loginBtn.addEventListener('click', async function() {
             try {
                 loginBtn.disabled = true;
-                loginBtn.textContent = 'Requesting OTP...';
-                showMessage('Requesting OTP code...', 'info');
+                loginBtn.hidden = true;
 
-                // Make GET request to the webhook
-                const response = await fetch('https://n8n.fphn8n.online/webhook/deploy-assistant-otp', {
+                // Make GET request to our proxy endpoint
+                const response = await fetch('/api/request-otp', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -40,36 +37,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (response.ok) {
                     const data = await response.json();
-                    currentOTP = data.OTP;
-                    currentTTL = data.TTL;
                     
-                    if (currentOTP) {
-                        showMessage('OTP code sent! Please check discord. Request another code in ' + currentTTL + ' seconds', 'success');
+                    // Handle array response from n8n webhook
+                    const responseData = Array.isArray(data) ? data[0] : data;
+                    currentResumeWorkflowUrl = responseData['resumeWorkflow'];
+                    
+                    if (currentResumeWorkflowUrl) {
+                        showMessage('Authentication link sent! Please check discord.', 'success');
                         otpForm.style.display = 'block';
                         otpInput.focus();
-                        
-                        // Start the timer
-                        startTimer();
                     } else {
-                        showMessage('Error: No OTP code received from server', 'error');
+                        showMessage('Error: No authentication link received from server', 'error');
                         loginBtn.disabled = false;
-                        loginBtn.textContent = 'Login';
+                        loginBtn.textContent = 'Send OTP';
                     }
                 } else {
-                    showMessage('Error: Failed to request OTP code', 'error');
+                    showMessage('Error: Failed to request authentication link', 'error');
                     loginBtn.disabled = false;
-                    loginBtn.textContent = 'Login';
+                    loginBtn.textContent = 'Send OTP';
                 }
             } catch (error) {
                 console.error('Error requesting OTP:', error);
                 showMessage('Error: Failed to connect to server', 'error');
                 loginBtn.disabled = false;
-                loginBtn.textContent = 'Login';
+                loginBtn.textContent = 'Send OTP';
             }
         });
 
         // Verify button click handler
-        verifyBtn.addEventListener('click', function() {
+        verifyBtn.addEventListener('click', async function() {
             const enteredOTP = otpInput.value.trim();
             
             if (!enteredOTP) {
@@ -77,17 +73,60 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            if (currentOTP && enteredOTP === currentOTP.toString()) {
-                showMessage('Login successful! Welcome!', 'success');
-                otpForm.style.display = 'none';
-                otpInput.value = '';
-                currentOTP = null;
-                stopTimer();
-                showLoggedInState();
-            } else {
-                showMessage('Invalid OTP code. Please try again.', 'error');
+            if (!currentResumeWorkflowUrl) {
+                showMessage('No authentication link available. Please request a new one.', 'error');
+                return;
+            }
+
+            try {
+                verifyBtn.disabled = true;
+                verifyBtn.textContent = 'Verifying...';
+                showMessage('Verifying OTP code...', 'info');
+
+                // Make GET request to our proxy endpoint with OTP in header
+                const response = await fetch(`/api/verify-otp?url=${encodeURIComponent(currentResumeWorkflowUrl)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'user-attempt': enteredOTP
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Handle array response from n8n webhook
+                    const responseData = Array.isArray(data) ? data[0] : data;
+                    const otpCheck = responseData.OTPCheck;
+                    
+                    if (otpCheck === true || otpCheck === 'true') {
+                        showMessage('Login successful! Welcome!', 'success');
+                        otpForm.style.display = 'none';
+                        otpInput.value = '';
+                        currentResumeWorkflowUrl = null;
+                        showLoggedInState();
+                    } else if (otpCheck === false || otpCheck === 'false') {
+                        showMessage('Invalid OTP code. Please try again.', 'error');
+                        otpInput.value = '';
+                        otpInput.focus();
+                    } else {
+                        showMessage('Unexpected response from server. Please try again.', 'error');
+                        otpInput.value = '';
+                        otpInput.focus();
+                    }
+                } else {
+                    showMessage('Error: Failed to verify OTP code', 'error');
+                    otpInput.value = '';
+                    otpInput.focus();
+                }
+            } catch (error) {
+                console.error('Error verifying OTP:', error);
+                showMessage('Error: Failed to verify OTP code', 'error');
                 otpInput.value = '';
                 otpInput.focus();
+            } finally {
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = 'Verify';
             }
         });
 
@@ -95,8 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cancelBtn.addEventListener('click', function() {
             otpForm.style.display = 'none';
             otpInput.value = '';
-            currentOTP = null;
-            stopTimer();
+            currentResumeWorkflowUrl = null;
             hideMessage();
         });
 
@@ -115,42 +153,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         function hideMessage() {
             messageDiv.style.display = 'none';
-        }
-
-        function startTimer() {
-            // Clear any existing timer
-            if (timerInterval) {
-                clearInterval(timerInterval);
-            }
-            
-            // Keep the button disabled and show countdown
-            loginBtn.disabled = true;
-            loginBtn.textContent = `Request another code in ${currentTTL}s`;
-            
-            // Start countdown
-            timerInterval = setInterval(() => {
-                currentTTL--;
-                loginBtn.textContent = `Request another code in ${currentTTL}s`;
-                
-                if (currentTTL <= 0) {
-                    // Timer finished, enable button
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = 'Send OTP';
-                    currentTTL = null;
-                }
-            }, 1000);
-        }
-
-        function stopTimer() {
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
-            loginBtn.disabled = false;
-            loginBtn.textContent = 'Send OTP';
-            currentTTL = null;
         }
 
         // State management functions
