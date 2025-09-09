@@ -1,0 +1,281 @@
+/* Time Management Page Styles */
+
+body {
+    background-color: #000000;
+}
+
+.time-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.page-header h1 {
+    color: #00ffff;
+    font-family: 'Courier New', monospace;
+    margin: 0;
+}
+
+.filter-dropdown-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.month-input {
+    padding: 8px 12px;
+    background: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    cursor: pointer;
+    display: none;
+}
+
+.month-input.show {
+    display: block;
+}
+
+.month-input:focus {
+    outline: none;
+    border-color: #00ffff;
+    box-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+}
+
+.month-input::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+.filter-dropdown {
+    padding: 8px 12px;
+    background: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
+    cursor: pointer;
+}
+
+.filter-dropdown:focus {
+    outline: none;
+    border-color: #00ffff;
+    box-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+}
+
+.filter-dropdown option {
+    background: #2a2a2a;
+    color: #ffffff;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    background: #007bff;
+    border: 1px solid #007bff;
+    border-radius: 4px;
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+    background: #0056b3;
+    border-color: #0056b3;
+}
+
+.filter-btn:disabled {
+    background: #555;
+    border-color: #555;
+    cursor: not-allowed;
+}
+
+.record-time-form {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 30px;
+    margin: 20px 0;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    color: #00ffff;
+    margin-bottom: 8px;
+    font-family: 'Courier New', monospace;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px;
+    background: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #00ffff;
+    box-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+}
+
+/* Select dropdown styling */
+select.form-input {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
+}
+
+select.form-input option {
+    background: #2a2a2a;
+    color: #ffffff;
+}
+
+.form-submit-btn {
+    width: 100%;
+    padding: 12px;
+    background: #007bff;
+    color: #ffffff;
+    border: 1px solid #007bff;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.form-submit-btn:hover {
+    background: #0056b3;
+    border-color: #0056b3;
+}
+
+.form-submit-btn:disabled {
+    background: #555;
+    border-color: #555;
+    cursor: not-allowed;
+}
+
+.management-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin: 20px auto;
+    align-items: center;
+    height: 80vh;
+    width: 90vw;
+}
+
+.management-column {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+    min-height: 200px;
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.column-title {
+    color: #00ffff;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.chart-bar {
+    width: 100%;
+    height: 20px;
+    background: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.chart-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00ffff, #0080ff);
+    transition: width 0.5s ease;
+}
+
+.chart-value {
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    text-align: center;
+}
+
+
+.navigation-container {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.nav-btn {
+    padding: 10px 20px;
+    background: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    margin: 10px 0;
+}
+
+.nav-btn:hover {
+    background: #3a3a3a;
+    border-color: #00ffff;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 650px) {
+    .management-column {
+        width: 80%;
+    }
+    
+    .filter-dropdown-container {
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .month-input,
+    .filter-dropdown,
+    .filter-btn {
+        width: 100%;
+        max-width: 300px;
+    }
+}

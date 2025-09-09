@@ -8,6 +8,33 @@
     padding: 20px;
 }
 
+/* User Info and Logout */
+.user-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #333;
+}
+
+.logout-btn {
+    background-color: #dc3545;
+    color: #ffffff;
+    border: 1px solid #dc3545;
+    padding: 6px 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.logout-btn:hover {
+    background-color: #c82333;
+    border-color: #c82333;
+}
+
 .login-actions {
     margin-top: 20px;
 }
@@ -377,7 +404,6 @@
 .terminal-output .json-boolean {
     color: #a8e6cf;
 }
-
 
 /* Responsive Design */
 @media screen and (max-width: 650px) {
