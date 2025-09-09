@@ -307,3 +307,40 @@ def verify_otp():
         return jsonify({'error': f'Request failed: {str(e)}'}), 500
     except Exception as e:
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+
+@app.route('/api/google-maps-scraper', methods=['GET', 'OPTIONS'])
+def google_maps_scraper():
+    """Proxy endpoint for Google Maps Scraper with CORS headers"""
+    if request.method == 'OPTIONS':
+        return '', 200, {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, user-input'
+        }
+    
+    try:
+        # Get the user input from the request headers
+        user_input = request.headers.get('user-input')
+        if not user_input:
+            return jsonify({'error': 'user-input header is required'}), 400
+        
+        # Make the request to the n8n webhook
+        webhook_url = 'https://n8n.fphn8n.online/webhook/4bc99686-2de3-4704-9991-8bac632674cf'
+        headers = {
+            'Content-Type': 'application/json',
+            'user-input': user_input
+        }
+        
+        response = requests.get(webhook_url, headers=headers, timeout=30)
+        
+        # Return success response (we don't process the response as per requirements)
+        return jsonify({'status': 'success', 'message': 'Google Maps Scraper initiated'}), 200, {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, user-input'
+        }
+        
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Request failed: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
