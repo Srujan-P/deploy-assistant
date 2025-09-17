@@ -409,57 +409,7 @@
     color: #a8e6cf;
 }
 
-#googleMapsScraperInput {
-    padding: 10px;
-    border: 1px solid #404040;
-    border-radius: 5px;
-    font-size: 14px;
-}
 
-/* Google Maps Scraper Mobile Section */
-.google-maps-scraper-mobile {
-    display: none;
-    background-color: #2d2d2d;
-    padding: 20px;
-    border-top: 2px solid #404040;
-}
-
-.google-maps-scraper-mobile h3 {
-    color: #00ff00;
-    margin-bottom: 15px;
-    font-size: 1.2em;
-    font-family: 'Courier New', monospace;
-    text-align: center;
-    border-bottom: 1px solid #404040;
-    padding-bottom: 10px;
-}
-
-.mobile-scraper-content {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.mobile-scraper-content .action-input {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #404040;
-    border-radius: 5px;
-    font-size: 14px;
-    background-color: #1a1a1a;
-    color: #00ff00;
-    font-family: 'Courier New', monospace;
-}
-
-.mobile-scraper-content .action-input:focus {
-    border-color: #00ff00;
-    box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
-    outline: none;
-}
-
-.mobile-scraper-content .action-input::placeholder {
-    color: #666;
-}
 
 /* Custom Scrollbar for Sidebar */
 .sidebar::-webkit-scrollbar {
@@ -507,16 +457,6 @@
         overflow-y: auto;
     }
     
-    /* Hide Google Maps Scraper in desktop sidebar on mobile */
-    .google-maps-scraper-desktop {
-        display: none;
-    }
-    
-    /* Show Google Maps Scraper mobile section */
-    .google-maps-scraper-mobile {
-        display: block;
-        flex-shrink: 0;
-    }
     
     .action-buttons {
         flex-direction: row;
