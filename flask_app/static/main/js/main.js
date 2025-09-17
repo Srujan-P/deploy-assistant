@@ -44,6 +44,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Auto-set current date for time recording form
+    const dateInput = document.getElementById('dateInput');
+    if (dateInput) {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const todayString = `${year}-${month}-${day}`;
+        dateInput.value = todayString;
+    }
+
     // Only initialize OTP functionality if elements exist
     if (loginBtn && otpForm && otpInput && verifyBtn && cancelBtn && messageDiv) {
         // Login button click handler
