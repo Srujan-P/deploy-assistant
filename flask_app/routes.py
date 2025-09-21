@@ -28,6 +28,14 @@ ALLOWED_USERS = [
     'jacobguty5@gmail.com',
 ]
 
+# Users allowed to submit time entries (subset of ALLOWED_USERS)
+# thesocialappdev@gmail.com is excluded from time entry access
+TIME_ENTRY_ALLOWED_USERS = [
+    'srujan.r.patil@gmail.com',
+    'admin@halfblynd.com',
+    'jacobguty5@gmail.com',
+]
+
 # Load additional users from environment variable
 env_allowed_users = os.environ.get('ALLOWED_USERS', '')
 if env_allowed_users:
@@ -52,6 +60,12 @@ def is_user_authorized(email):
     if not email:
         return False
     return email.lower() in [user.lower() for user in ALLOWED_USERS]
+
+def is_time_entry_authorized(email):
+    """Check if user email is authorized to submit time entries"""
+    if not email:
+        return False
+    return email.lower() in [user.lower() for user in TIME_ENTRY_ALLOWED_USERS]
 
 def require_auth(f):
     """Decorator to require authentication for routes"""
@@ -228,12 +242,29 @@ def submit_time():
         }
     
     try:
+        # Check if user is authorized to submit time entries
+        user_email = session.get('user_email', '')
+        if not is_time_entry_authorized(user_email):
+            return jsonify({'error': 'Access denied. You are not authorized to submit time entries.'}), 403
+        
         webhook_url = 'https://n8n.fphn8n.online/webhook/7d88c61d-fb99-4ba5-b1bd-1dabbdfc9608'
         
         # Get data from query parameters
-        name = request.args.get('name', '')
         date = request.args.get('date', '')
         hours = request.args.get('hours', '')
+        
+        # Auto-detect name from logged-in user's email
+        user_name = session.get('user_name', '')
+        
+        # Email to display name mapping
+        email_to_name_mapping = {
+            'srujan.r.patil@gmail.com': 'Big Sru',
+            'admin@halfblynd.com': 'Trevor',
+            'jacobguty5@gmail.com': 'Jacob',
+        }
+        
+        # Get display name from mapping, fallback to session name, then email
+        name = email_to_name_mapping.get(user_email, user_name or user_email)
         
         
         headers = {
@@ -400,10 +431,12 @@ def google_auth_direct():
 def get_user_info():
     """Get current user information"""
     try:
+        user_email = session.get('user_email', 'user@example.com')
         user_info = {
             'name': session.get('user_name', 'User'),
-            'email': session.get('user_email', 'user@example.com'),
-            'user_type': session.get('user_type', 'unknown')
+            'email': user_email,
+            'user_type': session.get('user_type', 'unknown'),
+            'can_submit_time': is_time_entry_authorized(user_email)
         }
         return jsonify(user_info)
     except Exception as e:

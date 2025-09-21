@@ -80,6 +80,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (userEmailElement) {
                     userEmailElement.textContent = userInfo.email || 'user@example.com';
                 }
+                
+                // Handle time entry access control
+                handleTimeEntryAccess(userInfo.can_submit_time);
             } else {
                 console.error('Failed to load user profile');
                 // Set default values
@@ -95,6 +98,44 @@ document.addEventListener('DOMContentLoaded', function() {
             const userEmailElement = document.getElementById('userEmail');
             if (usernameElement) usernameElement.textContent = 'User';
             if (userEmailElement) userEmailElement.textContent = 'user@example.com';
+        }
+    }
+    
+    function handleTimeEntryAccess(canSubmitTime) {
+        // Find time entry form elements
+        const recordTimeForm = document.querySelector('.record-time-form');
+        const submitTimeBtn = document.getElementById('submitTimeBtn');
+        const timeEntrySection = document.querySelector('.time-entry-section');
+        
+        if (!canSubmitTime) {
+            // Hide the time entry form and show access denied message
+            if (recordTimeForm) {
+                recordTimeForm.style.display = 'none';
+            }
+            
+            if (timeEntrySection) {
+                // Create access denied message
+                const accessDeniedMsg = document.createElement('div');
+                accessDeniedMsg.className = 'access-denied-message';
+                accessDeniedMsg.innerHTML = `
+                    <div class="access-denied-content">
+                        <h3>Access Restricted</h3>
+                        <p>You don't have permission to submit time entries.</p>
+                        <p>Please contact an administrator if you believe this is an error.</p>
+                    </div>
+                `;
+                
+                // Insert the message after the page header
+                const pageHeader = timeEntrySection.querySelector('.page-header');
+                if (pageHeader) {
+                    pageHeader.insertAdjacentElement('afterend', accessDeniedMsg);
+                }
+            }
+        } else {
+            // Ensure form is visible for authorized users
+            if (recordTimeForm) {
+                recordTimeForm.style.display = 'block';
+            }
         }
     }
 
@@ -463,16 +504,11 @@ document.addEventListener('DOMContentLoaded', function() {
         submitTimeBtn.addEventListener('click', async function() {
             try {
                 // Get form values
-                const name = document.getElementById('nameSelect').value;
                 const date = document.getElementById('dateInput').value;
                 const hours = document.getElementById('hoursInput').value;
                 
 
                 // Validate form
-                if (!name) {
-                    alert('Please select a name');
-                    return;
-                }
                 if (!date || date.trim() === '') {
                     alert('Please select a date');
                     return;
@@ -488,7 +524,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Make GET request to our proxy endpoint with data in query parameters
                 const params = new URLSearchParams({
-                    'name': name,
                     'date': date,
                     'hours': hours
                 });
