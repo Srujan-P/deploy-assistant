@@ -17,6 +17,24 @@ GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
 GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'http://localhost:8080/callback')
 
+# Allowed users list - Add authorized email addresses here
+# You can add users in two ways:
+# 1. Hardcoded list below (for small teams)
+# 2. Environment variable ALLOWED_USERS (comma-separated emails)
+ALLOWED_USERS = [
+    'srujan.r.patil@gmail.com',
+    'thesocialappdev@gmail.com',
+    'admin@halfblynd.com',
+    'jacobguty5@gmail.com',
+]
+
+# Load additional users from environment variable
+env_allowed_users = os.environ.get('ALLOWED_USERS', '')
+if env_allowed_users:
+    env_users = [email.strip().lower() for email in env_allowed_users.split(',') if email.strip()]
+    ALLOWED_USERS.extend(env_users)
+    ALLOWED_USERS = list(set(ALLOWED_USERS))  # Remove duplicates
+
 # OAuth 2.0 scopes
 SCOPES = [
     'openid',
@@ -28,6 +46,12 @@ SCOPES = [
 def is_authenticated():
     """Check if user is authenticated"""
     return session.get('authenticated', False)
+
+def is_user_authorized(email):
+    """Check if user email is in the allowed users list"""
+    if not email:
+        return False
+    return email.lower() in [user.lower() for user in ALLOWED_USERS]
 
 def require_auth(f):
     """Decorator to require authentication for routes"""
@@ -248,6 +272,13 @@ def google_auth():
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
         return jsonify({'error': 'Google OAuth not configured'}), 500
     
+    # Use the scopes that match what Google Console expects
+    minimal_scopes = [
+        'openid',
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/userinfo.profile'
+    ]
+    
     # Create OAuth flow
     flow = Flow.from_client_config(
         {
@@ -259,7 +290,7 @@ def google_auth():
                 "redirect_uris": [GOOGLE_REDIRECT_URI]
             }
         },
-        scopes=SCOPES
+        scopes=minimal_scopes
     )
     flow.redirect_uri = GOOGLE_REDIRECT_URI
     
@@ -289,7 +320,13 @@ def google_callback():
         if not code:
             return jsonify({'error': 'Authorization code not provided'}), 400
         
-        # Create OAuth flow
+        # Use the scopes that match what Google Console expects
+        minimal_scopes = [
+            'openid',
+            'https://www.googleapis.com/auth/userinfo.email',
+            'https://www.googleapis.com/auth/userinfo.profile'
+        ]
+        
         flow = Flow.from_client_config(
             {
                 "web": {
@@ -300,7 +337,7 @@ def google_callback():
                     "redirect_uris": [GOOGLE_REDIRECT_URI]
                 }
             },
-            scopes=SCOPES
+            scopes=minimal_scopes
         )
         flow.redirect_uri = GOOGLE_REDIRECT_URI
         
@@ -315,10 +352,18 @@ def google_callback():
             GOOGLE_CLIENT_ID
         )
         
+        # Check if user is authorized
+        user_email = id_info.get('email')
+        if not is_user_authorized(user_email):
+            # Clear OAuth state
+            session.pop('oauth_state', None)
+            return render_template('login.html', 
+                                 error_message=f"Access denied. Your email ({user_email}) is not authorized to access this application. Please contact the administrator.")
+        
         # Store user information in session
         session['authenticated'] = True
         session['user_type'] = 'google_oauth'
-        session['user_email'] = id_info.get('email')
+        session['user_email'] = user_email
         session['user_name'] = id_info.get('name')
         session['user_picture'] = id_info.get('picture')
         
@@ -330,6 +375,7 @@ def google_callback():
     except Exception as e:
         print(f"OAuth callback error: {str(e)}")
         return jsonify({'error': f'OAuth authentication failed: {str(e)}'}), 500
+
 
 @app.route('/auth/google/direct')
 def google_auth_direct():
@@ -362,6 +408,18 @@ def get_user_info():
         return jsonify(user_info)
     except Exception as e:
         return jsonify({'error': f'Failed to get user info: {str(e)}'}), 500
+
+@app.route('/api/allowed-users', methods=['GET'])
+@require_auth
+def get_allowed_users():
+    """Get list of allowed users (for debugging)"""
+    try:
+        return jsonify({
+            'allowed_users': ALLOWED_USERS,
+            'total_count': len(ALLOWED_USERS)
+        })
+    except Exception as e:
+        return jsonify({'error': f'Failed to get allowed users: {str(e)}'}), 500
 
 	
 

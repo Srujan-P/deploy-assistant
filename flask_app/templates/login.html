@@ -26,6 +26,12 @@
                     <span style="color: #00ffff;">Please authenticate to access deployment commands</span>
                 </div>
                 
+                {% if error_message %}
+                <div class="terminal-line" style="color: #ff6b6b; margin-bottom: 15px;">
+                    <span style="color: #ff6b6b;">❌ {{ error_message }}</span>
+                </div>
+                {% endif %}
+                
                 <div class="login-actions">
                     <div class="terminal-line">
                         <span style="color: #00ffff;">Please sign in with Google to continue:</span>

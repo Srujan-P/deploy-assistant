@@ -7,11 +7,6 @@ docker.prod.env
 secrets/
 .secrets/
 
-# Docker files
-docker-compose.yml
-Dockerfile
-Dockerfile-dev
-
 # Python
 __pycache__/
 *.py[cod]
