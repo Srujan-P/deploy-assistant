@@ -593,3 +593,90 @@
     font-size: 0.9rem;
 }
 
+/* Clock In/Out Button Styles */
+.clock-btn {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.clock-btn.clocked-in {
+    background: linear-gradient(135deg, #ff4444, #cc0000);
+    border-color: #ff6666;
+    color: #fff;
+}
+
+.clock-btn.clocked-in:hover {
+    background: linear-gradient(135deg, #ff6666, #ff0000);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 68, 68, 0.3);
+}
+
+.clock-btn.clocked-out {
+    background: linear-gradient(135deg, #00ff88, #00cc66);
+    border-color: #00ff88;
+    color: #000;
+}
+
+.clock-btn.clocked-out:hover {
+    background: linear-gradient(135deg, #00ffaa, #00ff88);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+}
+
+.clock-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Clock Messages - Terminal Style */
+.clock-message {
+    padding: 0;
+    margin: 2px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    animation: slideIn 0.3s ease;
+    background: none;
+    border: none;
+    border-radius: 0;
+    position: relative;
+}
+
+.clock-message::before {
+    content: "DeployAssistant@3rdspace:~$ ";
+    color: #00ff00;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.clock-message.success {
+    color: #00ff00;
+    background: none;
+}
+
+.clock-message.success::before {
+    content: "DeployAssistant@3rdspace:~$ ";
+    color: #00ff00;
+}
+
+.clock-message.error {
+    color: #ff0000;
+    background: none;
+}
+
+.clock-message.error::before {
+    content: "DeployAssistant@3rdspace:~$ ";
+    color: #ff0000;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+

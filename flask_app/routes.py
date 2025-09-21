@@ -11,6 +11,7 @@ import os
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
+from datetime import datetime, timedelta
 
 # Google OAuth Configuration
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
@@ -28,13 +29,6 @@ ALLOWED_USERS = [
     'jacobguty5@gmail.com',
 ]
 
-# Users allowed to submit time entries (subset of ALLOWED_USERS)
-# thesocialappdev@gmail.com is excluded from time entry access
-TIME_ENTRY_ALLOWED_USERS = [
-    'srujan.r.patil@gmail.com',
-    'admin@halfblynd.com',
-    'jacobguty5@gmail.com',
-]
 
 # Load additional users from environment variable
 env_allowed_users = os.environ.get('ALLOWED_USERS', '')
@@ -61,11 +55,20 @@ def is_user_authorized(email):
         return False
     return email.lower() in [user.lower() for user in ALLOWED_USERS]
 
-def is_time_entry_authorized(email):
-    """Check if user email is authorized to submit time entries"""
+
+def is_clock_authorized(email):
+    """Check if user email is authorized to use clock in/out functionality"""
     if not email:
         return False
-    return email.lower() in [user.lower() for user in TIME_ENTRY_ALLOWED_USERS]
+    # All users except thesocialappdev@gmail.com can use clock in/out
+    return email.lower() != 'thesocialappdev@gmail.com'
+
+def is_record_time_authorized(email):
+    """Check if user email is authorized to access record time functionality"""
+    if not email:
+        return False
+    # All users except thesocialappdev@gmail.com can access record time
+    return email.lower() != 'thesocialappdev@gmail.com'
 
 def require_auth(f):
     """Decorator to require authentication for routes"""
@@ -232,6 +235,7 @@ def gcloud_deploy():
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 
 @app.route('/api/submit-time', methods=['GET', 'OPTIONS'])
+@require_auth
 def submit_time():
     """Proxy endpoint for time entry submission with CORS headers"""
     if request.method == 'OPTIONS':
@@ -242,11 +246,6 @@ def submit_time():
         }
     
     try:
-        # Check if user is authorized to submit time entries
-        user_email = session.get('user_email', '')
-        if not is_time_entry_authorized(user_email):
-            return jsonify({'error': 'Access denied. You are not authorized to submit time entries.'}), 403
-        
         webhook_url = 'https://n8n.fphn8n.online/webhook/7d88c61d-fb99-4ba5-b1bd-1dabbdfc9608'
         
         # Get data from query parameters
@@ -255,6 +254,7 @@ def submit_time():
         
         # Auto-detect name from logged-in user's email
         user_name = session.get('user_name', '')
+        user_email = session.get('user_email', '')
         
         # Email to display name mapping
         email_to_name_mapping = {
@@ -436,7 +436,8 @@ def get_user_info():
             'name': session.get('user_name', 'User'),
             'email': user_email,
             'user_type': session.get('user_type', 'unknown'),
-            'can_submit_time': is_time_entry_authorized(user_email)
+            'can_use_clock': is_clock_authorized(user_email),
+            'can_record_time': is_record_time_authorized(user_email)
         }
         return jsonify(user_info)
     except Exception as e:
@@ -453,6 +454,99 @@ def get_allowed_users():
         })
     except Exception as e:
         return jsonify({'error': f'Failed to get allowed users: {str(e)}'}), 500
+
+@app.route('/api/clock-in', methods=['POST'])
+@require_auth
+def clock_in():
+    """Handle clock in"""
+    try:
+        user_email = session.get('user_email', '')
+        if not is_clock_authorized(user_email):
+            return jsonify({'error': 'Access denied. You are not authorized to use clock in/out functionality.'}), 403
+        
+        current_time = datetime.now()
+        
+        # Check if already clocked in
+        if session.get('clock_status') == 'in':
+            return jsonify({'error': 'Already clocked in'}), 400
+        
+        # Store clock in data in session
+        session['clock_status'] = 'in'
+        session['clock_in_time'] = current_time.isoformat()
+        session['clock_in_date'] = current_time.strftime('%Y-%m-%d')
+        
+        return jsonify({
+            'success': True,
+            'clock_in_time': current_time.isoformat(),
+            'clock_in_date': current_time.strftime('%Y-%m-%d'),
+            'message': 'Successfully clocked in'
+        })
+    except Exception as e:
+        return jsonify({'error': f'Clock in failed: {str(e)}'}), 500
+
+@app.route('/api/clock-out', methods=['POST'])
+@require_auth
+def clock_out():
+    """Handle clock out"""
+    try:
+        user_email = session.get('user_email', '')
+        if not is_clock_authorized(user_email):
+            return jsonify({'error': 'Access denied. You are not authorized to use clock in/out functionality.'}), 403
+        
+        current_time = datetime.now()
+        
+        # Check if clocked in
+        if session.get('clock_status') != 'in':
+            return jsonify({'error': 'Not clocked in'}), 400
+        
+        # Get clock in time
+        clock_in_time_str = session.get('clock_in_time')
+        if not clock_in_time_str:
+            return jsonify({'error': 'Clock in time not found'}), 400
+        
+        clock_in_time = datetime.fromisoformat(clock_in_time_str)
+        clock_in_date = session.get('clock_in_date', clock_in_time.strftime('%Y-%m-%d'))
+        
+        # Calculate time difference
+        time_diff = current_time - clock_in_time
+        hours_worked = time_diff.total_seconds() / 3600  # Convert to hours
+        
+        # Clear clock status from session
+        session.pop('clock_status', None)
+        session.pop('clock_in_time', None)
+        session.pop('clock_in_date', None)
+        
+        return jsonify({
+            'success': True,
+            'clock_out_time': current_time.isoformat(),
+            'clock_in_date': clock_in_date,
+            'hours_worked': round(hours_worked, 2),
+            'time_worked': str(time_diff).split('.')[0],  # Remove microseconds
+            'message': f'Successfully clocked out. Worked {round(hours_worked, 2)} hours on {clock_in_date}'
+        })
+    except Exception as e:
+        return jsonify({'error': f'Clock out failed: {str(e)}'}), 500
+
+@app.route('/api/clock-status', methods=['GET'])
+@require_auth
+def get_clock_status():
+    """Get current clock status"""
+    try:
+        user_email = session.get('user_email', '')
+        if not is_clock_authorized(user_email):
+            return jsonify({'error': 'Access denied. You are not authorized to use clock in/out functionality.'}), 403
+        
+        clock_status = session.get('clock_status', 'out')
+        clock_in_time = session.get('clock_in_time')
+        clock_in_date = session.get('clock_in_date')
+        
+        return jsonify({
+            'status': clock_status,
+            'clock_in_time': clock_in_time,
+            'clock_in_date': clock_in_date
+        })
+    except Exception as e:
+        return jsonify({'error': f'Failed to get clock status: {str(e)}'}), 500
 
 	
 

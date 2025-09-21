@@ -17,6 +17,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Add the Flask application and install requirements
 RUN mkdir /app
+RUN mkdir -p /app/sessions
 COPY . /app
 WORKDIR /app
 RUN pip install --upgrade pip

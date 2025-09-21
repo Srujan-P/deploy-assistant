@@ -81,8 +81,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     userEmailElement.textContent = userInfo.email || 'user@example.com';
                 }
                 
-                // Handle time entry access control
-                handleTimeEntryAccess(userInfo.can_submit_time);
+                // Handle clock in/out access control
+                handleClockAccess(userInfo.can_use_clock);
+                
+                // Handle record time access control
+                handleRecordTimeAccess(userInfo.can_record_time);
             } else {
                 console.error('Failed to load user profile');
                 // Set default values
@@ -101,40 +104,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    function handleTimeEntryAccess(canSubmitTime) {
-        // Find time entry form elements
-        const recordTimeForm = document.querySelector('.record-time-form');
-        const submitTimeBtn = document.getElementById('submitTimeBtn');
-        const timeEntrySection = document.querySelector('.time-entry-section');
+    
+    function handleClockAccess(canUseClock) {
+        const clockBtn = document.getElementById('clockBtn');
         
-        if (!canSubmitTime) {
-            // Hide the time entry form and show access denied message
-            if (recordTimeForm) {
-                recordTimeForm.style.display = 'none';
-            }
-            
-            if (timeEntrySection) {
-                // Create access denied message
-                const accessDeniedMsg = document.createElement('div');
-                accessDeniedMsg.className = 'access-denied-message';
-                accessDeniedMsg.innerHTML = `
-                    <div class="access-denied-content">
-                        <h3>Access Restricted</h3>
-                        <p>You don't have permission to submit time entries.</p>
-                        <p>Please contact an administrator if you believe this is an error.</p>
-                    </div>
-                `;
-                
-                // Insert the message after the page header
-                const pageHeader = timeEntrySection.querySelector('.page-header');
-                if (pageHeader) {
-                    pageHeader.insertAdjacentElement('afterend', accessDeniedMsg);
-                }
+        if (!canUseClock) {
+            // Hide the clock button for restricted users
+            if (clockBtn) {
+                clockBtn.style.display = 'none';
             }
         } else {
-            // Ensure form is visible for authorized users
-            if (recordTimeForm) {
-                recordTimeForm.style.display = 'block';
+            // Ensure clock button is visible for authorized users
+            if (clockBtn) {
+                clockBtn.style.display = 'block';
+            }
+        }
+    }
+    
+    function handleRecordTimeAccess(canRecordTime) {
+        const recordTimeBtn = document.getElementById('recordTimeBtn');
+        
+        if (!canRecordTime) {
+            // Hide the record time button for restricted users
+            if (recordTimeBtn) {
+                recordTimeBtn.style.display = 'none';
+            }
+        } else {
+            // Ensure record time button is visible for authorized users
+            if (recordTimeBtn) {
+                recordTimeBtn.style.display = 'block';
             }
         }
     }
@@ -498,6 +496,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Clock in/out button functionality
+    const clockBtn = document.getElementById('clockBtn');
+    if (clockBtn) {
+        // Load initial clock status
+        loadClockStatus();
+        
+        clockBtn.addEventListener('click', function() {
+            const isClockedIn = clockBtn.textContent === 'Clock Out';
+            
+            if (isClockedIn) {
+                clockOut();
+            } else {
+                clockIn();
+            }
+        });
+    }
+
     // Time entry form submission functionality
     const submitTimeBtn = document.getElementById('submitTimeBtn');
     if (submitTimeBtn) {
@@ -528,6 +543,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'hours': hours
                 });
                 
+                console.log('Submitting time entry:', { date, hours });
                 
                 const response = await fetch(`/api/submit-time?${params}`, {
                     method: 'GET',
@@ -535,17 +551,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         'Content-Type': 'application/json'
                     }
                 });
+                
+                console.log('Response status:', response.status);
 
                 if (response.ok) {
                     const data = await response.json();
                     alert('Time entry submitted successfully!');
                     
                     // Clear form
-                    document.getElementById('nameSelect').value = '';
                     document.getElementById('dateInput').value = '';
                     document.getElementById('hoursInput').value = '';
                 } else {
-                    alert('Error submitting time entry. Please try again.');
+                    const errorData = await response.json();
+                    console.error('Time entry submission error:', errorData);
+                    alert(`Error submitting time entry: ${errorData.error || 'Unknown error'}`);
                 }
             } catch (error) {
                 console.error('Error submitting time entry:', error);
@@ -683,6 +702,155 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Clock in/out functions
+async function loadClockStatus() {
+    try {
+        const response = await fetch('/api/clock-status', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            updateClockButton(data.status);
+        }
+    } catch (error) {
+        console.error('Error loading clock status:', error);
+    }
+}
+
+async function clockIn() {
+    const clockBtn = document.getElementById('clockBtn');
+    if (!clockBtn) return;
+    
+    try {
+        clockBtn.disabled = true;
+        clockBtn.textContent = 'Clocking In...';
+        
+        const response = await fetch('/api/clock-in', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            updateClockButton('in');
+            showMessage(data.message, 'success');
+        } else {
+            showMessage(data.error, 'error');
+        }
+    } catch (error) {
+        console.error('Clock in error:', error);
+        showMessage('Clock in failed', 'error');
+    } finally {
+        clockBtn.disabled = false;
+    }
+}
+
+async function clockOut() {
+    const clockBtn = document.getElementById('clockBtn');
+    if (!clockBtn) return;
+    
+    try {
+        clockBtn.disabled = true;
+        clockBtn.textContent = 'Clocking Out...';
+        
+        const response = await fetch('/api/clock-out', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            updateClockButton('out');
+            showMessage(data.message, 'success');
+            
+            // Automatically submit time entry to n8n server
+            await submitTimeEntry(data.clock_in_date, data.hours_worked);
+        } else {
+            showMessage(data.error, 'error');
+        }
+    } catch (error) {
+        console.error('Clock out error:', error);
+        showMessage('Clock out failed', 'error');
+    } finally {
+        clockBtn.disabled = false;
+    }
+}
+
+function updateClockButton(status) {
+    const clockBtn = document.getElementById('clockBtn');
+    if (!clockBtn) return;
+    
+    if (status === 'in') {
+        clockBtn.textContent = 'Clock Out';
+        clockBtn.className = 'action-btn clock-btn clocked-in';
+    } else {
+        clockBtn.textContent = 'Clock In';
+        clockBtn.className = 'action-btn clock-btn clocked-out';
+    }
+}
+
+function showMessage(message, type) {
+    // Create a temporary message element
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `clock-message ${type}`;
+    
+    // Format message to look like terminal output
+    const timestamp = new Date().toLocaleTimeString();
+    const formattedMessage = `[${timestamp}] ${message}`;
+    messageDiv.textContent = formattedMessage;
+    
+    // Add to terminal output
+    const terminalOutput = document.getElementById('terminalOutput');
+    if (terminalOutput) {
+        terminalOutput.appendChild(messageDiv);
+        
+        // Auto-remove after 8 seconds (longer for terminal style)
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.parentNode.removeChild(messageDiv);
+            }
+        }, 8000);
+    }
+}
+
+async function submitTimeEntry(date, hours) {
+    try {
+        // Make GET request to submit-time endpoint with date and hours
+        const params = new URLSearchParams({
+            'date': date,
+            'hours': hours.toString()
+        });
+        
+        const response = await fetch(`/api/submit-time?${params}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            showMessage(`Time entry submitted to n8n: ${hours} hours on ${date}`, 'success');
+        } else {
+            const errorData = await response.json();
+            showMessage(`n8n submission failed: ${errorData.error}`, 'error');
+        }
+    } catch (error) {
+        console.error('Time entry submission error:', error);
+        showMessage('Failed to submit time entry to server', 'error');
+    }
+}
 
 // Function to update column with chart data
 function updateColumnChart(columnNumber, value) {
