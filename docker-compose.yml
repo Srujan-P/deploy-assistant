@@ -1,31 +1,24 @@
 # Author  : Srujan Patil <patilsru@msu.edu>
-# Production-ready Docker Compose configuration
 
 version: "3.8"
 services:
   # A user-defined name for this container
   flask-app:
     container_name: deploy-assistant
-    # Use production Dockerfile for deployment
+    # Indicates that `Dockerfile-dev` should be used for local instantiations
     build:
         context: .
-        dockerfile: Dockerfile
+        dockerfile: Dockerfile-dev
+    stdin_open: true
+    tty: true
     ports:
       - "8080:8080"
+    # Mounts the local directory to docker container as a volume.
+    volumes:
+      - .:/app
     # Load environment variables from file
     env_file:
       - docker.env
     # Environment variables (secrets should be in env_file)
     environment:
-      - SECRET_KEY=${SECRET_KEY}
-    # Production optimizations
-    restart: unless-stopped
-    # Security: run as non-root user
-    user: "1000:1000"
-    # Resource limits
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-        reservations:
-          memory: 256M
+      - SECRET_KEY=85c655fe6c3f868ebaff039b339ddb7850374024af4c68ac4b052e2eb4dab1ae
