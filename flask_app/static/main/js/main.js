@@ -585,54 +585,123 @@ document.addEventListener('DOMContentLoaded', function() {
             let monthValue = currentMonth;
             let yearValue = currentYear;
             
-            if (selectedFilter === 'pick-month') {
-                const monthInputValue = monthInput.value;
-                if (monthInputValue) {
-                    const [year, month] = monthInputValue.split('-');
-                    monthValue = parseInt(month);
-                    yearValue = parseInt(year);
+            if (selectedFilter === 'pick-month' && monthInput.value) {
+                const parts = monthInput.value.split('-');
+                const parsedYear = parseInt(parts[0], 10);
+                const parsedMonth = parseInt(parts[1], 10);
+                if (!isNaN(parsedMonth) && parsedMonth >= 1 && parsedMonth <= 12) {
+                    monthValue = parsedMonth;
+                }
+                if (!isNaN(parsedYear)) {
+                    yearValue = parsedYear;
                 }
             }
             
-            // Calculate date ranges based on filter
-            let startDate, endDate;
+            // Disable button during request
+            filterBtn.disabled = true;
+            filterBtn.textContent = 'Loading...';
             
-            switch (selectedFilter) {
-                case 'current-month':
-                    startDate = new Date(currentYear, currentMonth - 1, 1);
-                    endDate = new Date(currentYear, currentMonth, 0);
-                    break;
-                case 'past-3-months':
-                    startDate = new Date(currentYear, currentMonth - 3, 1);
-                    endDate = new Date(currentYear, currentMonth, 0);
-                    break;
-                case 'past-year':
-                    startDate = new Date(currentYear - 1, currentMonth - 1, 1);
-                    endDate = new Date(currentYear, currentMonth, 0);
-                    break;
-                case 'pick-month':
-                    startDate = new Date(yearValue, monthValue - 1, 1);
-                    endDate = new Date(yearValue, monthValue, 0);
-                    break;
-                default:
-                    return;
+            const webhookUrl = 'https://n8n.fphn8n.online/webhook/ed324838-d471-46d1-8667-660b6fe3164b';
+            
+            fetch(webhookUrl, {
+                method: 'GET',
+                headers: {
+                    'month': monthValue.toString(),
+                    'year': yearValue.toString(),
+                    'cur-month': currentMonth.toString()
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    const responseData = data[0];
+                    
+                    // Map dropdown values to response data keys
+                    const keyMapping = {
+                        'pick-month': 'pick-month',
+                        'current-month': 'cur-month',
+                        'past-3-months': 'past-3-moths',
+                        'past-year': 'past-year'
+                    };
+                    
+                    const keySuffix = keyMapping[selectedFilter] || 'cur-month';
+                    
+                    const srujValue = responseData[`sruj-${keySuffix}`] || 0;
+                    const jacobValue = responseData[`jacob-${keySuffix}`] || 0;
+                    const trevorValue = responseData[`trevor-${keySuffix}`] || 0;
+                    
+                    // Update the columns with chart data
+                    updateColumnChart(1, srujValue, 'Srujan');
+                    updateColumnChart(2, jacobValue, 'Jacob');
+                    updateColumnChart(3, trevorValue, 'Trevor');
+                }
+            })
+            .catch(error => {
+                console.log('Filter request failed:', error);
+            })
+            .finally(() => {
+                // Re-enable button
+                filterBtn.disabled = false;
+                filterBtn.textContent = 'Filter';
+            });
+        });
+    }
+
+    // Send webhook request when management view loads
+    if (window.location.pathname === '/time' && new URLSearchParams(window.location.search).get('view') === 'management') {
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1; // getMonth() returns 0-11, so add 1
+        const currentYear = now.getFullYear();
+
+        const webhookUrl = 'https://n8n.fphn8n.online/webhook/ed324838-d471-46d1-8667-660b6fe3164b';
+        
+        fetch(webhookUrl, {
+            method: 'GET',
+            headers: {
+                'month': currentMonth.toString(),
+                'year': currentYear.toString(),
+                'cur-month': currentMonth.toString()
             }
-            
-            // Format dates for display
-            const formatDate = (date) => {
-                return date.toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                });
-            };
-            
-            // Display filter results (placeholder - you can implement actual data loading here)
-            console.log(`Filtering from ${formatDate(startDate)} to ${formatDate(endDate)}`);
-            
-            // You can add actual data loading logic here
-            // For now, just show a message
-            alert(`Filter applied: ${formatDate(startDate)} to ${formatDate(endDate)}`);
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.length > 0) {
+                const responseData = data[0];
+                
+                const srujValue = responseData['sruj-cur-month'] || 0;
+                const jacobValue = responseData['jacob-cur-month'] || 0;
+                const trevorValue = responseData['trevor-cur-month'] || 0;
+                
+                // Update the columns with chart data
+                updateColumnChart(1, srujValue);
+                updateColumnChart(2, jacobValue);
+                updateColumnChart(3, trevorValue);
+            }
+        })
+        .catch(error => {
+            console.log('Webhook request completed (may have failed):', error);
         });
     }
 });
+
+// Function to update column with chart data
+function updateColumnChart(columnNumber, value) {
+    const column = document.querySelector(`.management-column:nth-child(${columnNumber})`);
+    if (column) {
+        // Create a simple bar chart visualization
+        const chartContainer = document.createElement('div');
+        chartContainer.className = 'chart-container';
+        chartContainer.innerHTML = `
+            <div class="chart-bar">
+                <div class="chart-fill" style="width: ${Math.min(value * 5, 100)}%"></div>
+            </div>
+            <div class="chart-value">${value} hours</div>
+        `;
+        
+        // Clear existing content except title
+        const title = column.querySelector('.column-title');
+        column.innerHTML = '';
+        column.appendChild(title);
+        column.appendChild(chartContainer);
+    }
+}
