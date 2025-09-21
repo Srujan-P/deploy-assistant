@@ -7,6 +7,22 @@ import json
 import random
 import requests
 from functools import wraps
+import os
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token
+from google_auth_oauthlib.flow import Flow
+
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
+GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'http://localhost:8080/callback')
+
+# OAuth 2.0 scopes
+SCOPES = [
+    'openid',
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile'
+]
 
 # Authentication helper functions
 def is_authenticated():
@@ -40,7 +56,7 @@ def root():
 @app.route('/login')
 @redirect_if_authenticated
 def login():
-	return render_template('login.html')
+    return render_template('login.html')
 
 @app.route('/home')
 @require_auth
@@ -224,87 +240,128 @@ def submit_time():
         return jsonify({'error': f'Request failed: {str(e)}'}), 500
     except Exception as e:
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
-	
-@app.route('/api/request-otp', methods=['GET', 'OPTIONS'])
-def request_otp():
-    """Proxy endpoint to handle OTP request with CORS headers"""
-    if request.method == 'OPTIONS':
-        # Handle preflight CORS request
-        return '', 200, {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type'
-        }
-    
-    try:
-        # Make the request to the n8n webhook for OTP request
-        webhook_url = 'https://n8n.fphn8n.online/webhook/deploy-assistant-otp'
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        
-        response = requests.get(webhook_url, headers=headers, timeout=30)
-        
-        # Return the response with CORS headers
-        return jsonify(response.json()), response.status_code, {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type'
-        }
-        
-    except requests.exceptions.RequestException as e:
-        return jsonify({'error': f'Request failed: {str(e)}'}), 500
-    except Exception as e:
-        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 
-@app.route('/api/verify-otp', methods=['GET', 'OPTIONS'])
-def verify_otp():
-    """Proxy endpoint to handle OTP verification with CORS headers"""
-    if request.method == 'OPTIONS':
-        # Handle preflight CORS request
-        return '', 200, {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, user-attempt'
-        }
+# Google OAuth Routes
+@app.route('/auth/google')
+def google_auth():
+    """Initiate Google OAuth flow"""
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        return jsonify({'error': 'Google OAuth not configured'}), 500
     
+    # Create OAuth flow
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": GOOGLE_CLIENT_ID,
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [GOOGLE_REDIRECT_URI]
+            }
+        },
+        scopes=SCOPES
+    )
+    flow.redirect_uri = GOOGLE_REDIRECT_URI
+    
+    # Generate authorization URL
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true'
+    )
+    
+    # Store state in session for security
+    session['oauth_state'] = state
+    
+    return redirect(authorization_url)
+
+@app.route('/callback')
+def google_callback():
+    """Handle Google OAuth callback"""
     try:
-        # Get the OTP from the request headers
-        user_attempt = request.headers.get('user-attempt')
-        if not user_attempt:
-            return jsonify({'error': 'user-attempt header is required'}), 400
+        # Get authorization code from callback
+        code = request.args.get('code')
+        state = request.args.get('state')
         
-        # Get the webhook URL from query parameters
-        webhook_url = request.args.get('url')
-        if not webhook_url:
-            return jsonify({'error': 'Webhook URL is required'}), 400
+        # Verify state parameter
+        if state != session.get('oauth_state'):
+            return jsonify({'error': 'Invalid state parameter'}), 400
         
-        # Make the request to the n8n webhook with the correct header
-        headers = {
-            'user-attempt': user_attempt,
-            'Content-Type': 'application/json'
-        }
+        if not code:
+            return jsonify({'error': 'Authorization code not provided'}), 400
         
-        response = requests.get(webhook_url, headers=headers, timeout=30)
-        response_data = response.json()
+        # Create OAuth flow
+        flow = Flow.from_client_config(
+            {
+                "web": {
+                    "client_id": GOOGLE_CLIENT_ID,
+                    "client_secret": GOOGLE_CLIENT_SECRET,
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "redirect_uris": [GOOGLE_REDIRECT_URI]
+                }
+            },
+            scopes=SCOPES
+        )
+        flow.redirect_uri = GOOGLE_REDIRECT_URI
         
-        # Check if OTP verification was successful
-        if response.ok:
-            response_data_array = response_data if isinstance(response_data, list) else [response_data]
-            if response_data_array and response_data_array[0].get('OTPCheck') in [True, 'true']:
-                # Set session as authenticated
-                session['authenticated'] = True
-                session['user_type'] = 'otp'
+        # Exchange authorization code for tokens
+        flow.fetch_token(code=code)
         
-        # Return the response with CORS headers
-        return jsonify(response_data), response.status_code, {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, user-attempt'
-        }
+        # Get user info from Google
+        credentials = flow.credentials
+        id_info = id_token.verify_oauth2_token(
+            credentials.id_token, 
+            google_requests.Request(), 
+            GOOGLE_CLIENT_ID
+        )
         
-    except requests.exceptions.RequestException as e:
-        return jsonify({'error': f'Request failed: {str(e)}'}), 500
+        # Store user information in session
+        session['authenticated'] = True
+        session['user_type'] = 'google_oauth'
+        session['user_email'] = id_info.get('email')
+        session['user_name'] = id_info.get('name')
+        session['user_picture'] = id_info.get('picture')
+        
+        # Clear OAuth state
+        session.pop('oauth_state', None)
+        
+        return redirect('/home')
+        
     except Exception as e:
-        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+        print(f"OAuth callback error: {str(e)}")
+        return jsonify({'error': f'OAuth authentication failed: {str(e)}'}), 500
+
+@app.route('/auth/google/direct')
+def google_auth_direct():
+    """Direct Google OAuth authentication (for testing)"""
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        return jsonify({'error': 'Google OAuth not configured'}), 500
+    
+    # For testing purposes, create a simple auth URL
+    auth_url = (
+        f"https://accounts.google.com/o/oauth2/auth?"
+        f"client_id={GOOGLE_CLIENT_ID}&"
+        f"redirect_uri={GOOGLE_REDIRECT_URI}&"
+        f"scope={'+'.join(SCOPES)}&"
+        f"response_type=code&"
+        f"access_type=offline"
+    )
+    
+    return jsonify({'auth_url': auth_url})
+
+@app.route('/api/user-info', methods=['GET'])
+@require_auth
+def get_user_info():
+    """Get current user information"""
+    try:
+        user_info = {
+            'name': session.get('user_name', 'User'),
+            'email': session.get('user_email', 'user@example.com'),
+            'user_type': session.get('user_type', 'unknown')
+        }
+        return jsonify(user_info)
+    except Exception as e:
+        return jsonify({'error': f'Failed to get user info: {str(e)}'}), 500
+
+	
 

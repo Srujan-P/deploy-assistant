@@ -1,4 +1,4 @@
-/* OTP Login Styles - Terminal Theme */
+/* Main Application Styles - Terminal Theme */
 .login-container {
     display: flex;
     align-items: center;
@@ -55,6 +55,80 @@
 .terminal-btn-primary:hover {
     background-color: #0056b3;
     border-color: #0056b3;
+}
+
+
+.google-login-btn {
+    background-color: #fff;
+    color: #333;
+    border: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
+    margin: 5px;
+}
+
+.google-login-btn:hover {
+    background-color: #f8f9fa;
+    border-color: #dadce0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* User Profile Section */
+.user-profile-section {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #2d2d2d;
+    border-radius: 8px;
+    border: 1px solid #404040;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.profile-circle {
+    width: 40px;
+    height: 40px;
+    background-color: #00ff00;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+    flex-shrink: 0;
+}
+
+.profile-circle svg {
+    width: 24px;
+    height: 24px;
+}
+
+.user-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.username {
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-email {
+    color: #ccc;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .terminal-btn-success {
@@ -142,10 +216,6 @@
     border-color: #007bff;
 }
 
-.otp-form {
-    display: none;
-    margin-top: 20px;
-}
 
 /* Legacy button styles for compatibility */
 .login-btn {

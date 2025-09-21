@@ -1,13 +1,5 @@
-// OTP Login Functionality
-let currentResumeWorkflowUrl = null;
-
+// Main Application Functionality
 document.addEventListener('DOMContentLoaded', function() {
-    const loginBtn = document.getElementById('loginBtn');
-    const otpForm = document.getElementById('otpForm');
-    const otpInput = document.getElementById('otpInput');
-    const verifyBtn = document.getElementById('verifyBtn');
-    const cancelBtn = document.getElementById('cancelBtn');
-    const messageDiv = document.getElementById('message');
     // Logged-in state elements
     const loginState = document.getElementById('loginState');
     const loggedInState = document.getElementById('loggedInState');
@@ -55,155 +47,59 @@ document.addEventListener('DOMContentLoaded', function() {
         dateInput.value = todayString;
     }
 
-    // Only initialize OTP functionality if elements exist
-    if (loginBtn && otpForm && otpInput && verifyBtn && cancelBtn && messageDiv) {
-        // Login button click handler
-        loginBtn.addEventListener('click', async function() {
-            try {
-                loginBtn.disabled = true;
-                loginBtn.hidden = true;
-
-                // Make GET request to our proxy endpoint
-                const response = await fetch('/api/request-otp', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    // Handle array response from n8n webhook
-                    const responseData = Array.isArray(data) ? data[0] : data;
-                    currentResumeWorkflowUrl = responseData['resumeWorkflow'];
-                    
-                    if (currentResumeWorkflowUrl) {
-                        showMessage('Authentication link sent! Please check discord.', 'success');
-                        otpForm.style.display = 'block';
-                        otpInput.focus();
-                    } else {
-                        showMessage('Error: No authentication link received from server', 'error');
-                        loginBtn.disabled = false;
-                        loginBtn.textContent = 'Send OTP';
-                    }
-                } else {
-                    showMessage('Error: Failed to request authentication link', 'error');
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = 'Send OTP';
-                }
-            } catch (error) {
-                console.error('Error requesting OTP:', error);
-                showMessage('Error: Failed to connect to server', 'error');
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Send OTP';
-            }
+    // Google OAuth Login functionality
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    if (googleLoginBtn) {
+        googleLoginBtn.addEventListener('click', function() {
+            // Redirect to Google OAuth endpoint
+            window.location.href = '/auth/google';
         });
-
-        // Verify button click handler
-        verifyBtn.addEventListener('click', async function() {
-            const enteredOTP = otpInput.value.trim();
-            
-            if (!enteredOTP) {
-                showMessage('Please enter the OTP code', 'error');
-                return;
-            }
-
-            if (!currentResumeWorkflowUrl) {
-                showMessage('No authentication link available. Please request a new one.', 'error');
-                return;
-            }
-
-            try {
-                verifyBtn.disabled = true;
-                verifyBtn.textContent = 'Verifying...';
-                showMessage('Verifying OTP code...', 'info');
-
-                // Make GET request to our proxy endpoint with OTP in header
-                const response = await fetch(`/api/verify-otp?url=${encodeURIComponent(currentResumeWorkflowUrl)}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'user-attempt': enteredOTP
-                    }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    // Handle array response from n8n webhook
-                    const responseData = Array.isArray(data) ? data[0] : data;
-                    const otpCheck = responseData.OTPCheck;
-                    
-                           if (otpCheck === true || otpCheck === 'true') {
-                               showMessage('Login successful! Redirecting...', 'success');
-                               window.location.href = '/home';
-                    } else if (otpCheck === false || otpCheck === 'false') {
-                        showMessage('Invalid OTP code. Please try again.', 'error');
-                        otpInput.value = '';
-                        otpInput.focus();
-                    } else {
-                        showMessage('Unexpected response from server. Please try again.', 'error');
-                        otpInput.value = '';
-                        otpInput.focus();
-                    }
-                } else {
-                    showMessage('Error: Failed to verify OTP code', 'error');
-                    otpInput.value = '';
-                    otpInput.focus();
-                }
-            } catch (error) {
-                console.error('Error verifying OTP:', error);
-                showMessage('Error: Failed to verify OTP code', 'error');
-                otpInput.value = '';
-                otpInput.focus();
-            } finally {
-                verifyBtn.disabled = false;
-                verifyBtn.textContent = 'Verify';
-            }
-        });
-
-        // Cancel button click handler
-        cancelBtn.addEventListener('click', function() {
-            otpForm.style.display = 'none';
-            otpInput.value = '';
-            currentResumeWorkflowUrl = null;
-            hideMessage();
-        });
-
-        // Enter key handler for OTP input
-        otpInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                verifyBtn.click();
-            }
-        });
-
-        function showMessage(text, type) {
-            messageDiv.textContent = text;
-            messageDiv.className = `message ${type}`;
-            messageDiv.style.display = 'block';
-        }
-
-        function hideMessage() {
-            messageDiv.style.display = 'none';
-        }
-
-        // State management functions
-        function showLoggedInState() {
-            if (loginState) loginState.style.display = 'none';
-            if (loggedInState) loggedInState.style.display = 'block';
-            hideMessage();
-        }
-
-        function showLoginState() {
-            if (loginState) loginState.style.display = 'block';
-            if (loggedInState) loggedInState.style.display = 'none';
-        }
-
-
-
-
     }
+
+    // Load user profile information
+    async function loadUserProfile() {
+        try {
+            const response = await fetch('/api/user-info', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (response.ok) {
+                const userInfo = await response.json();
+                
+                // Update username
+                const usernameElement = document.getElementById('username');
+                if (usernameElement) {
+                    usernameElement.textContent = userInfo.name || 'User';
+                }
+                
+                // Update email
+                const userEmailElement = document.getElementById('userEmail');
+                if (userEmailElement) {
+                    userEmailElement.textContent = userInfo.email || 'user@example.com';
+                }
+            } else {
+                console.error('Failed to load user profile');
+                // Set default values
+                const usernameElement = document.getElementById('username');
+                const userEmailElement = document.getElementById('userEmail');
+                if (usernameElement) usernameElement.textContent = 'User';
+                if (userEmailElement) userEmailElement.textContent = 'user@example.com';
+            }
+        } catch (error) {
+            console.error('Error loading user profile:', error);
+            // Set default values
+            const usernameElement = document.getElementById('username');
+            const userEmailElement = document.getElementById('userEmail');
+            if (usernameElement) usernameElement.textContent = 'User';
+            if (userEmailElement) userEmailElement.textContent = 'user@example.com';
+        }
+    }
+
+    // Load user profile when page loads
+    loadUserProfile();
 
     // GCloud init button functionality
     const gcloudBtn = document.getElementById('actionBtn1');
@@ -261,19 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             } else {
                                 clearInterval(typeWriter);
                                 
-                                // Add new prompt line with success status after output is done
-                                const isSuccess = responseData.success === true || responseData.success === 'true' || responseData.code === 0;
-                                const successText = isSuccess ? 'SUCCESS' : 'FAILED';
-                                const successColor = isSuccess ? '#00ff00' : '#ff0000';
-                                const promptLine = document.createElement('div');
-                                promptLine.className = 'terminal-line';
-                                promptLine.innerHTML = `
-                                    <span class="terminal-prompt">DeployAssistant@3rdspace:~$</span>
-                                    <span style="color: ${successColor};">${successText}</span>
-                                `;
-                                terminalOutput.appendChild(promptLine);
-                                
-                                // Add another prompt line at the bottom
+                                // Add new prompt line at the bottom
                                 const bottomPromptLine = document.createElement('div');
                                 bottomPromptLine.className = 'terminal-line';
                                 bottomPromptLine.innerHTML = `
@@ -290,54 +174,38 @@ document.addEventListener('DOMContentLoaded', function() {
                                 // Final scroll to bottom
                                 terminalOutput.scrollTop = terminalOutput.scrollHeight;
                             }
-                        }, 100); // 100ms delay between lines
+                        }, 50); // Adjust speed as needed
                     }
                 } else {
-                    // Handle error response
+                    console.error('GCloud init failed:', response.status);
                     const terminalOutput = document.getElementById('terminalOutput');
                     if (terminalOutput) {
-                        terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: Failed to execute GCloud init</div>`;
-                        terminalOutput.innerHTML += `<div class="terminal-line">
-                            <span class="terminal-prompt">DeployAssistant@3rdspace:~$</span>
-                            <span style="color: #ff0000;">FAILED</span>
-                        </div>`;
+                        terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: GCloud init failed with status ${response.status}</div>`;
                         terminalOutput.scrollTop = terminalOutput.scrollHeight;
                     }
                 }
             } catch (error) {
-                console.error('Error executing GCloud init:', error);
+                console.error('Error during GCloud init:', error);
                 const terminalOutput = document.getElementById('terminalOutput');
                 if (terminalOutput) {
-                    // Check if it's a CORS error
-                    if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
-                        terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: CORS policy blocked the request. The webhook needs to allow requests from localhost:8080</div>`;
-                    } else {
-                        terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: ${error.message}</div>`;
-                    }
-                    terminalOutput.innerHTML += `<div class="terminal-line">
-                        <span class="terminal-prompt">DeployAssistant@3rdspace:~$</span>
-                        <span style="color: #ff0000;">FAILED</span>
-                    </div>`;
+                    terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: ${error.message}</div>`;
                     terminalOutput.scrollTop = terminalOutput.scrollHeight;
                 }
             } finally {
                 gcloudBtn.disabled = false;
-                gcloudBtn.textContent = 'GCloud init & Git Fetch/Pull';
+                gcloudBtn.textContent = 'GCloud Init';
             }
         });
     }
 
     // Docker Build button functionality
     const dockerBuildBtn = document.getElementById('actionBtn2');
-    console.log('Docker Build button found:', dockerBuildBtn);
     if (dockerBuildBtn) {
         dockerBuildBtn.addEventListener('click', async function() {
-            console.log('Docker Build button clicked!');
             try {
                 dockerBuildBtn.disabled = true;
-                dockerBuildBtn.textContent = 'Running...';
+                dockerBuildBtn.textContent = 'Building...';
                 
-                // Make GET request to our proxy endpoint
                 const response = await fetch('/api/docker-build', {
                     method: 'GET',
                     headers: {
@@ -347,55 +215,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (response.ok) {
                     const data = await response.json();
-                    
-                    // Handle array response - get first item if it's an array
                     const responseData = Array.isArray(data) ? data[0] : data;
                     
-                    // Display output in terminal
                     const terminalOutput = document.getElementById('terminalOutput');
                     if (terminalOutput) {
-                        // Hide the blinking cursor
                         const cursor = document.querySelector('.terminal-cursor');
                         if (cursor) {
                             cursor.style.display = 'none';
                         }
                         
-                        // Add output content (handle both stderr and output fields)
                         const outputContent = responseData.stderr || responseData.output || 'No output available';
-                        
-                        // Add output content directly to terminal output without extra spacing
                         terminalOutput.innerHTML = '';
                         
-                        // Typewriter effect for output - line by line
                         const lines = outputContent.split('\n');
                         let lineIndex = 0;
                         
                         const typeWriter = setInterval(() => {
                             if (lineIndex < lines.length) {
-                                // Create a new line for each output line
                                 const outputLine = document.createElement('div');
                                 outputLine.className = 'terminal-line';
                                 outputLine.textContent = lines[lineIndex];
                                 terminalOutput.appendChild(outputLine);
                                 lineIndex++;
-                                // Scroll to bottom during typing
                                 terminalOutput.scrollTop = terminalOutput.scrollHeight;
                             } else {
                                 clearInterval(typeWriter);
                                 
-                                // Add new prompt line with success status after output is done
-                                const isSuccess = responseData.success === true || responseData.success === 'true' || responseData.code === 0;
-                                const successText = isSuccess ? 'SUCCESS' : 'FAILED';
-                                const successColor = isSuccess ? '#00ff00' : '#ff0000';
-                                const promptLine = document.createElement('div');
-                                promptLine.className = 'terminal-line';
-                                promptLine.innerHTML = `
-                                    <span class="terminal-prompt">DeployAssistant@3rdspace:~$</span>
-                                    <span style="color: ${successColor};">${successText}</span>
-                                `;
-                                terminalOutput.appendChild(promptLine);
-                                
-                                // Add another prompt line at the bottom
                                 const bottomPromptLine = document.createElement('div');
                                 bottomPromptLine.className = 'terminal-line';
                                 bottomPromptLine.innerHTML = `
@@ -404,42 +249,27 @@ document.addEventListener('DOMContentLoaded', function() {
                                 `;
                                 terminalOutput.appendChild(bottomPromptLine);
                                 
-                                // Show cursor again at the end
                                 if (cursor) {
                                     cursor.style.display = 'inline';
                                 }
                                 
-                                // Final scroll to bottom
                                 terminalOutput.scrollTop = terminalOutput.scrollHeight;
                             }
-                        }, 100); // 100ms delay between lines
+                        }, 50);
                     }
                 } else {
-                    // Handle error response
+                    console.error('Docker build failed:', response.status);
                     const terminalOutput = document.getElementById('terminalOutput');
                     if (terminalOutput) {
-                        terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: Failed to execute Docker Build</div>`;
-                        terminalOutput.innerHTML += `<div class="terminal-line">
-                            <span class="terminal-prompt">DeployAssistant@3rdspace:~$</span>
-                            <span style="color: #ff0000;">FAILED</span>
-                        </div>`;
+                        terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: Docker build failed with status ${response.status}</div>`;
                         terminalOutput.scrollTop = terminalOutput.scrollHeight;
                     }
                 }
             } catch (error) {
-                console.error('Error executing Docker Build:', error);
+                console.error('Error during Docker build:', error);
                 const terminalOutput = document.getElementById('terminalOutput');
                 if (terminalOutput) {
-                    // Check if it's a CORS error
-                    if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
-                        terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: CORS policy blocked the request. The webhook needs to allow requests from localhost:8080</div>`;
-                    } else {
-                        terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: ${error.message}</div>`;
-                    }
-                    terminalOutput.innerHTML += `<div class="terminal-line">
-                        <span class="terminal-prompt">DeployAssistant@3rdspace:~$</span>
-                        <span style="color: #ff0000;">FAILED</span>
-                    </div>`;
+                    terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: ${error.message}</div>`;
                     terminalOutput.scrollTop = terminalOutput.scrollHeight;
                 }
             } finally {
@@ -451,15 +281,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Docker Push button functionality
     const dockerPushBtn = document.getElementById('actionBtn3');
-    console.log('Docker Push button found:', dockerPushBtn);
     if (dockerPushBtn) {
         dockerPushBtn.addEventListener('click', async function() {
-            console.log('Docker Push button clicked!');
             try {
                 dockerPushBtn.disabled = true;
-                dockerPushBtn.textContent = 'Running...';
+                dockerPushBtn.textContent = 'Pushing...';
                 
-                // Make GET request to our proxy endpoint
                 const response = await fetch('/api/docker-push', {
                     method: 'GET',
                     headers: {
@@ -469,55 +296,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (response.ok) {
                     const data = await response.json();
-                    
-                    // Handle array response - get first item if it's an array
                     const responseData = Array.isArray(data) ? data[0] : data;
                     
-                    // Display output in terminal
                     const terminalOutput = document.getElementById('terminalOutput');
                     if (terminalOutput) {
-                        // Hide the blinking cursor
                         const cursor = document.querySelector('.terminal-cursor');
                         if (cursor) {
                             cursor.style.display = 'none';
                         }
                         
-                        // Add output content (handle both stderr and output fields)
                         const outputContent = responseData.stderr || responseData.output || 'No output available';
-                        
-                        // Add output content directly to terminal output without extra spacing
                         terminalOutput.innerHTML = '';
                         
-                        // Typewriter effect for output - line by line
                         const lines = outputContent.split('\n');
                         let lineIndex = 0;
                         
                         const typeWriter = setInterval(() => {
                             if (lineIndex < lines.length) {
-                                // Create a new line for each output line
                                 const outputLine = document.createElement('div');
                                 outputLine.className = 'terminal-line';
                                 outputLine.textContent = lines[lineIndex];
                                 terminalOutput.appendChild(outputLine);
                                 lineIndex++;
-                                // Scroll to bottom during typing
                                 terminalOutput.scrollTop = terminalOutput.scrollHeight;
                             } else {
                                 clearInterval(typeWriter);
                                 
-                                // Add new prompt line with success status after output is done
-                                const isSuccess = responseData.success === true || responseData.success === 'true' || responseData.code === 0;
-                                const successText = isSuccess ? 'SUCCESS' : 'FAILED';
-                                const successColor = isSuccess ? '#00ff00' : '#ff0000';
-                                const promptLine = document.createElement('div');
-                                promptLine.className = 'terminal-line';
-                                promptLine.innerHTML = `
-                                    <span class="terminal-prompt">DeployAssistant@3rdspace:~$</span>
-                                    <span style="color: ${successColor};">${successText}</span>
-                                `;
-                                terminalOutput.appendChild(promptLine);
-                                
-                                // Add another prompt line at the bottom
                                 const bottomPromptLine = document.createElement('div');
                                 bottomPromptLine.className = 'terminal-line';
                                 bottomPromptLine.innerHTML = `
@@ -526,42 +330,27 @@ document.addEventListener('DOMContentLoaded', function() {
                                 `;
                                 terminalOutput.appendChild(bottomPromptLine);
                                 
-                                // Show cursor again at the end
                                 if (cursor) {
                                     cursor.style.display = 'inline';
                                 }
                                 
-                                // Final scroll to bottom
                                 terminalOutput.scrollTop = terminalOutput.scrollHeight;
                             }
-                        }, 100); // 100ms delay between lines
+                        }, 50);
                     }
                 } else {
-                    // Handle error response
+                    console.error('Docker push failed:', response.status);
                     const terminalOutput = document.getElementById('terminalOutput');
                     if (terminalOutput) {
-                        terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: Failed to execute Docker Push</div>`;
-                        terminalOutput.innerHTML += `<div class="terminal-line">
-                            <span class="terminal-prompt">DeployAssistant@3rdspace:~$</span>
-                            <span style="color: #ff0000;">FAILED</span>
-                        </div>`;
+                        terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: Docker push failed with status ${response.status}</div>`;
                         terminalOutput.scrollTop = terminalOutput.scrollHeight;
                     }
                 }
             } catch (error) {
-                console.error('Error executing Docker Push:', error);
+                console.error('Error during Docker push:', error);
                 const terminalOutput = document.getElementById('terminalOutput');
                 if (terminalOutput) {
-                    // Check if it's a CORS error
-                    if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
-                        terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: CORS policy blocked the request. The webhook needs to allow requests from localhost:8080</div>`;
-                    } else {
-                        terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: ${error.message}</div>`;
-                    }
-                    terminalOutput.innerHTML += `<div class="terminal-line">
-                        <span class="terminal-prompt">DeployAssistant@3rdspace:~$</span>
-                        <span style="color: #ff0000;">FAILED</span>
-                    </div>`;
+                    terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: ${error.message}</div>`;
                     terminalOutput.scrollTop = terminalOutput.scrollHeight;
                 }
             } finally {
@@ -571,17 +360,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // GCloud Run Deploy button functionality
+    // GCloud Deploy button functionality
     const gcloudDeployBtn = document.getElementById('actionBtn4');
-    console.log('GCloud Deploy button found:', gcloudDeployBtn);
     if (gcloudDeployBtn) {
         gcloudDeployBtn.addEventListener('click', async function() {
-            console.log('GCloud Deploy button clicked!');
             try {
                 gcloudDeployBtn.disabled = true;
-                gcloudDeployBtn.textContent = 'Running...';
+                gcloudDeployBtn.textContent = 'Deploying...';
                 
-                // Make GET request to our proxy endpoint
                 const response = await fetch('/api/gcloud-deploy', {
                     method: 'GET',
                     headers: {
@@ -591,61 +377,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (response.ok) {
                     const data = await response.json();
-                    
-                    // Handle array response - get first item if it's an array
                     const responseData = Array.isArray(data) ? data[0] : data;
                     
-                    // Display output in terminal
                     const terminalOutput = document.getElementById('terminalOutput');
                     if (terminalOutput) {
-                        // Hide the blinking cursor
                         const cursor = document.querySelector('.terminal-cursor');
                         if (cursor) {
                             cursor.style.display = 'none';
                         }
                         
-                        // Add output content (handle both stderr and output fields)
                         const outputContent = responseData.stderr || responseData.output || 'No output available';
-                        
-                        // Add output content directly to terminal output without extra spacing
                         terminalOutput.innerHTML = '';
                         
-                        // Typewriter effect for output - line by line
                         const lines = outputContent.split('\n');
                         let lineIndex = 0;
                         
                         const typeWriter = setInterval(() => {
                             if (lineIndex < lines.length) {
-                                // Create a new line for each output line
                                 const outputLine = document.createElement('div');
                                 outputLine.className = 'terminal-line';
-                                
-                                // Check if the line contains a URL and make it clickable
-                                const lineText = lines[lineIndex];
-                                if (lineText.includes('http')) {
-                                    // Extract URL and make it clickable
-                                    const urlMatch = lineText.match(/(https?:\/\/[^\s]+)/);
-                                    if (urlMatch) {
-                                        const url = urlMatch[1];
-                                        const beforeUrl = lineText.substring(0, lineText.indexOf(url));
-                                        const afterUrl = lineText.substring(lineText.indexOf(url) + url.length);
-                                        
-                                        outputLine.innerHTML = `${beforeUrl}<a href="${url}" target="_blank" style="color: #00ff00; text-decoration: underline;">${url}</a>${afterUrl}`;
-                                    } else {
-                                        outputLine.textContent = lineText;
-                                    }
-                                } else {
-                                    outputLine.textContent = lineText;
-                                }
-                                
+                                outputLine.textContent = lines[lineIndex];
                                 terminalOutput.appendChild(outputLine);
                                 lineIndex++;
-                                // Scroll to bottom during typing
                                 terminalOutput.scrollTop = terminalOutput.scrollHeight;
                             } else {
                                 clearInterval(typeWriter);
                                 
-                                // Add another prompt line at the bottom
                                 const bottomPromptLine = document.createElement('div');
                                 bottomPromptLine.className = 'terminal-line';
                                 bottomPromptLine.innerHTML = `
@@ -654,52 +411,37 @@ document.addEventListener('DOMContentLoaded', function() {
                                 `;
                                 terminalOutput.appendChild(bottomPromptLine);
                                 
-                                // Show cursor again at the end
                                 if (cursor) {
                                     cursor.style.display = 'inline';
                                 }
                                 
-                                // Final scroll to bottom
                                 terminalOutput.scrollTop = terminalOutput.scrollHeight;
                             }
-                        }, 100); // 100ms delay between lines
+                        }, 50);
                     }
                 } else {
-                    // Handle error response
+                    console.error('GCloud deploy failed:', response.status);
                     const terminalOutput = document.getElementById('terminalOutput');
                     if (terminalOutput) {
-                        terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: Failed to execute GCloud Run Deploy</div>`;
-                        terminalOutput.innerHTML += `<div class="terminal-line">
-                            <span class="terminal-prompt">DeployAssistant@3rdspace:~$</span>
-                            <span style="color: #ff0000;">FAILED</span>
-                        </div>`;
+                        terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: GCloud deploy failed with status ${response.status}</div>`;
                         terminalOutput.scrollTop = terminalOutput.scrollHeight;
                     }
                 }
             } catch (error) {
-                console.error('Error executing GCloud Run Deploy:', error);
+                console.error('Error during GCloud deploy:', error);
                 const terminalOutput = document.getElementById('terminalOutput');
                 if (terminalOutput) {
-                    // Check if it's a CORS error
-                    if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
-                        terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: CORS policy blocked the request. The webhook needs to allow requests from localhost:8080</div>`;
-                    } else {
-                        terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: ${error.message}</div>`;
-                    }
-                    terminalOutput.innerHTML += `<div class="terminal-line">
-                        <span class="terminal-prompt">DeployAssistant@3rdspace:~$</span>
-                        <span style="color: #ff0000;">FAILED</span>
-                    </div>`;
+                    terminalOutput.innerHTML += `<div class="terminal-line" style="color: #ff0000;">Error: ${error.message}</div>`;
                     terminalOutput.scrollTop = terminalOutput.scrollHeight;
                 }
             } finally {
                 gcloudDeployBtn.disabled = false;
-                gcloudDeployBtn.textContent = 'GCloud Run Deploy';
+                gcloudDeployBtn.textContent = 'GCloud Deploy';
             }
         });
     }
 
-    // Time Management button functionality
+    // Time management button functionality
     const timeManagementBtn = document.getElementById('timeManagementBtn');
     if (timeManagementBtn) {
         timeManagementBtn.addEventListener('click', function() {
@@ -707,15 +449,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Record Time button functionality
+    // Record time button functionality
     const recordTimeBtn = document.getElementById('recordTimeBtn');
     if (recordTimeBtn) {
         recordTimeBtn.addEventListener('click', function() {
             window.location.href = '/time?view=record';
         });
     }
-
-
 
     // Time entry form submission functionality
     const submitTimeBtn = document.getElementById('submitTimeBtn');
@@ -810,124 +550,54 @@ document.addEventListener('DOMContentLoaded', function() {
             let monthValue = currentMonth;
             let yearValue = currentYear;
             
-            if (selectedFilter === 'pick-month' && monthInput.value) {
-                const parts = monthInput.value.split('-');
-                const parsedYear = parseInt(parts[0], 10);
-                const parsedMonth = parseInt(parts[1], 10);
-                if (!isNaN(parsedMonth) && parsedMonth >= 1 && parsedMonth <= 12) {
-                    monthValue = parsedMonth;
-                }
-                if (!isNaN(parsedYear)) {
-                    yearValue = parsedYear;
+            if (selectedFilter === 'pick-month') {
+                const monthInputValue = monthInput.value;
+                if (monthInputValue) {
+                    const [year, month] = monthInputValue.split('-');
+                    monthValue = parseInt(month);
+                    yearValue = parseInt(year);
                 }
             }
             
-            // Disable button during request
-            filterBtn.disabled = true;
-            filterBtn.textContent = 'Loading...';
+            // Calculate date ranges based on filter
+            let startDate, endDate;
             
-            const webhookUrl = 'https://n8n.fphn8n.online/webhook/ed324838-d471-46d1-8667-660b6fe3164b';
+            switch (selectedFilter) {
+                case 'current-month':
+                    startDate = new Date(currentYear, currentMonth - 1, 1);
+                    endDate = new Date(currentYear, currentMonth, 0);
+                    break;
+                case 'past-3-months':
+                    startDate = new Date(currentYear, currentMonth - 3, 1);
+                    endDate = new Date(currentYear, currentMonth, 0);
+                    break;
+                case 'past-year':
+                    startDate = new Date(currentYear - 1, currentMonth - 1, 1);
+                    endDate = new Date(currentYear, currentMonth, 0);
+                    break;
+                case 'pick-month':
+                    startDate = new Date(yearValue, monthValue - 1, 1);
+                    endDate = new Date(yearValue, monthValue, 0);
+                    break;
+                default:
+                    return;
+            }
             
-            fetch(webhookUrl, {
-                method: 'GET',
-                headers: {
-                    'month': monthValue.toString(),
-                    'year': yearValue.toString(),
-                    'cur-month': currentMonth.toString()
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data && data.length > 0) {
-                    const responseData = data[0];
-                    
-                    // Map dropdown values to response data keys
-                    const keyMapping = {
-                        'pick-month': 'pick-month',
-                        'current-month': 'cur-month',
-                        'past-3-months': 'past-3-moths',
-                        'past-year': 'past-year'
-                    };
-                    
-                    const keySuffix = keyMapping[selectedFilter] || 'cur-month';
-                    
-                    const srujValue = responseData[`sruj-${keySuffix}`] || 0;
-                    const jacobValue = responseData[`jacob-${keySuffix}`] || 0;
-                    const trevorValue = responseData[`trevor-${keySuffix}`] || 0;
-                    
-                    // Update the columns with chart data
-                    updateColumnChart(1, srujValue, 'Srujan');
-                    updateColumnChart(2, jacobValue, 'Jacob');
-                    updateColumnChart(3, trevorValue, 'Trevor');
-                }
-            })
-            .catch(error => {
-                console.log('Filter request failed:', error);
-            })
-            .finally(() => {
-                // Re-enable button
-                filterBtn.disabled = false;
-                filterBtn.textContent = 'Filter';
-            });
+            // Format dates for display
+            const formatDate = (date) => {
+                return date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+            };
+            
+            // Display filter results (placeholder - you can implement actual data loading here)
+            console.log(`Filtering from ${formatDate(startDate)} to ${formatDate(endDate)}`);
+            
+            // You can add actual data loading logic here
+            // For now, just show a message
+            alert(`Filter applied: ${formatDate(startDate)} to ${formatDate(endDate)}`);
         });
     }
-
-    // Send webhook request when management view loads
-    if (window.location.pathname === '/time' && new URLSearchParams(window.location.search).get('view') === 'management') {
-        const now = new Date();
-        const currentMonth = now.getMonth() + 1; // getMonth() returns 0-11, so add 1
-        const currentYear = now.getFullYear();
-        
-        const webhookUrl = 'https://n8n.fphn8n.online/webhook/ed324838-d471-46d1-8667-660b6fe3164b';
-        
-        fetch(webhookUrl, {
-            method: 'GET',
-            headers: {
-                'month': currentMonth.toString(),
-                'year': currentYear.toString(),
-                'cur-month': currentMonth.toString()
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Extract the values from the response
-            if (data && data.length > 0) {
-                const responseData = data[0];
-                const srujValue = responseData['sruj-cur-month'] || 0;
-                const jacobValue = responseData['jacob-cur-month'] || 0;
-                const trevorValue = responseData['trevor-cur-month'] || 0;
-                
-                // Update the columns with chart data
-                updateColumnChart(1, srujValue);
-                updateColumnChart(2, jacobValue);
-                updateColumnChart(3, trevorValue);
-            }
-        })
-        .catch(error => {
-            console.log('Webhook request completed (may have failed):', error);
-        });
-    }
-
 });
-
-// Function to update column with chart data (moved outside DOMContentLoaded)
-function updateColumnChart(columnNumber, value) {
-    const column = document.querySelector(`.management-column:nth-child(${columnNumber})`);
-    if (column) {
-        // Create a simple bar chart visualization
-        const chartContainer = document.createElement('div');
-        chartContainer.className = 'chart-container';
-        chartContainer.innerHTML = `
-            <div class="chart-bar">
-                <div class="chart-fill" style="width: ${Math.min(value * 5, 100)}%"></div>
-            </div>
-            <div class="chart-value">${value} hours</div>
-        `;
-        
-        // Clear existing content except title
-        const title = column.querySelector('.column-title');
-        column.innerHTML = '';
-        column.appendChild(title);
-        column.appendChild(chartContainer);
-    }
-}
